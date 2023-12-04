@@ -1,0 +1,34 @@
+# Cache sizes in KiB
+# Size per core
+L1="32"
+L2="256"
+# Total size
+L3="8192"
+
+# Cache associativities
+L1_ASSOCIATIVITY="8"
+L2_ASSOCIATIVITY="8"
+
+# Cache line size in Bytes
+CACHE_LINE="64"
+
+# Number of TLB entries in the L1 DTLB
+DTLB_ENTRY="64"
+
+# Page size in KiB"
+DTLB_PAGE="4"
+
+# Change to "true" to enable pattern matching
+# based optimizations in polly (for polybench evaluation)
+POLLY_ENABLE_PATTERN_MATCHING="false"
+
+# Change to "true" to disable vectorization
+LLVM_DISABLE_VECTORIZATION="false"
+
+# Change to "true" to disable unrolling
+LLVM_DISABLE_UNROLLING="false"
+
+# Number of logical processors in cpu
+# The following line should automatically get the number of logical cores in your machine
+# But please verify if it works correctly
+CORES="$([ $(uname) = 'Darwin' ] && sysctl -n hw.logicalcpu_max || lscpu -p | egrep -v '^#' | wc -l)"
