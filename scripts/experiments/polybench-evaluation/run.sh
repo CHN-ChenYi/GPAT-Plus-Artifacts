@@ -186,7 +186,7 @@ if [[ ! -z $CUSTOM_REPEATS ]]; then
   REPEATS=$CUSTOM_REPEATS
 fi
 
-for binaries in $(find $INPUT_DIR -type d -name "*-bin" | sort); do
+for binaries in $(find $INPUT_DIR -type d -name "*-bin*" | sort); do
   echoGreen "\nRUNNING: $(basename $binaries)"
 
   output_log_name="$(basename ${binaries%-bin}).log"

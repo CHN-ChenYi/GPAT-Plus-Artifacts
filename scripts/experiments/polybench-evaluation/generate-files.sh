@@ -248,12 +248,26 @@ if [ ! -f $MLIR_PACKING_SH ]; then
 fi
 MLIR_PACKING_SH=$(realpath $MLIR_PACKING_SH)
 
+MLIR_PLUS_PACKING_SH="$scriptPath/../../mlir-plus-packing/mlir-plus-packing.sh"
+if [ ! -f $MLIR_PLUS_PACKING_SH ]; then
+  echo "mlir-plus-packing.sh not found!"
+  exit 1
+fi
+MLIR_PLUS_PACKING_SH=$(realpath $MLIR_PLUS_PACKING_SH)
+
 LOWER_BIN_SH="$scriptPath/../../lower-to-binary/lower-to-binary.sh"
 if [ ! -f $LOWER_BIN_SH ]; then
   echo "lower-to-binary.sh not found!"
   exit 1
 fi
 LOWER_BIN_SH=$(realpath $LOWER_BIN_SH)
+
+LOWER_BIN_PLUS_SH="$scriptPath/../../lower-to-binary-plus/lower-to-binary-plus.sh"
+if [ ! -f $LOWER_BIN_PLUS_SH ]; then
+  echo "lower-to-binary-plus.sh not found!"
+  exit 1
+fi
+LOWER_BIN_PLUS_SH=$(realpath $LOWER_BIN_PLUS_SH)
 
 POLLY_SH="$scriptPath/../../polly/polly.sh"
 if [ ! -f $POLLY_SH ]; then
@@ -268,6 +282,13 @@ if [ ! -f $AFFINE_TILING_SH ]; then
   exit 1
 fi
 AFFINE_TILING_SH=$(realpath $AFFINE_TILING_SH)
+
+AFFINE_TILING_PLUS_SH="$scriptPath/../../affine-tiling-plus/affine-tiling-plus.sh"
+if [ ! -f $AFFINE_TILING_PLUS_SH ]; then
+  echo "affine-tiling-plus.sh not found!"
+  exit 1
+fi
+AFFINE_TILING_PLUS_SH=$(realpath $AFFINE_TILING_PLUS_SH)
 
 cd $OUTPUT_DIR
 
@@ -355,6 +376,23 @@ else
   $AFFINE_TILING_SH -c $L3 $POLYGEIST_OUT $AFFINE_TILING_L3_OUT
   # ----------------------------------------------------------------
 
+  # Generate affine tiling mlir plus files-------------------------------
+  echoGreen "\nAFFINE TILING PLUS: l1"
+  AFFINE_TILING_PLUS_L1_OUT="$OUTPUT_DIR/affine-tiling-l1-mlir-plus"
+  mkdir $AFFINE_TILING_PLUS_L1_OUT
+  $AFFINE_TILING_PLUS_SH -c $L1 $POLYGEIST_OUT $AFFINE_TILING_PLUS_L1_OUT
+
+  echoGreen "\nAFFINE TILING PLUS: l2"
+  AFFINE_TILING_L2_OUT="$OUTPUT_DIR/affine-tiling-l2-mlir-plus"
+  mkdir $AFFINE_TILING_L2_OUT
+  $AFFINE_TILING_PLUS_SH -c $L2 $POLYGEIST_OUT $AFFINE_TILING_L2_OUT
+
+  echoGreen "\nAFFINE TILING PLUS: l3"
+  AFFINE_TILING_L3_OUT="$OUTPUT_DIR/affine-tiling-l3-mlir-plus"
+  mkdir $AFFINE_TILING_L3_OUT
+  $AFFINE_TILING_PLUS_SH -c $L3 $POLYGEIST_OUT $AFFINE_TILING_L3_OUT
+  # ----------------------------------------------------------------
+
   # Generate packings for affine tiling mlir files------------------
   for tiling_out in $(find $OUTPUT_DIR -type d -name "affine-tiling-l[0-9]-mlir" | sort); do
     cache=$(basename $tiling_out | cut -d '-' -f 3)
@@ -366,6 +404,19 @@ else
                      --dtlb-entries $DTLB_ENTRY \
                      --dtlb-page $DTLB_PAGE \
                      $tiling_out $PACKING_OUT
+  done
+
+  # Generate packings for affine tiling mlir-plus files------------------
+  for tiling_out in $(find $OUTPUT_DIR -type d -name "affine-tiling-l[0-9]-mlir-plus" | sort); do
+    cache=$(basename $tiling_out | cut -d '-' -f 3)
+    echoGreen "\nPACKING PLUS: $cache"
+    PACKING_PLUS_OUT="$OUTPUT_DIR/affine-tiling-${cache}-packing-mlir-plus"
+    mkdir $PACKING_PLUS_OUT
+    $MLIR_PLUS_PACKING_SH --l1 $L1 --l2 $L2 --l3 $L3 \
+                          --cache-line $CACHE_LINE \
+                          --dtlb-entries $DTLB_ENTRY \
+                          --dtlb-page $DTLB_PAGE \
+                          $tiling_out $PACKING_PLUS_OUT
   done
   # ----------------------------------------------------------------
 
@@ -402,8 +453,8 @@ if [ "$TILING_METHOD" == "Polymer" ]; then
     fi
   done
 else
-  # Delete mlir packing files that are not in packed-files list
-  for i in $(find -type f -path "*affine-tiling-l[0-9]-packing-mlir/*.mlir" | sed 's/.\///'); do
+  # Delete mlir plus packing files that are not in packed-files list
+  for i in $(find -type f -path "*affine-tiling-l[0-9]-packing-mlir-plus/*.mlir" | sed 's/.\///'); do
     grep -q $i $PACKED_FILES
     if [ "$?" -eq "1" ]; then
       rm $i
@@ -413,8 +464,8 @@ else
   # Get list of the tiling files that were not packed
   PACKED_TILING_FILES="$OUTPUT_DIR/packed-tiling-files.txt"
   cat $PACKED_FILES | sed "s/-packing//" > $PACKED_TILING_FILES
-  # Delete mlir tiling files that were not packed
-  for i in $(find -type f -path "*affine-tiling-l[0-9]-mlir/*.mlir" | sed 's/.\///'); do
+  # Delete mlir plus tiling files that were not packed
+  for i in $(find -type f -path "*affine-tiling-l[0-9]-mlir-plus/*.mlir" | sed 's/.\///'); do
     grep -q $i $PACKED_TILING_FILES
     if [ "$?" -eq "1" ]; then
       rm $i
@@ -513,6 +564,16 @@ else
     mkdir $packing_bin
     echoGreen "\nCOMPILE AFFINE PACKING: $(echo $packing_out | grep -o 'l[0-9]')"
     $LOWER_BIN_SH -D $DATASET_SIZE $FLAGS $packing_out $packing_bin
+    rm -r $packing_bin/tmp
+  done
+  # ----------------------------------------------------------------
+
+  # Compile affine tiling packing plus executables ----------------------
+  for packing_out in $(find $OUTPUT_DIR -type d -name "affine-tiling-l[0-9]-packing-mlir-plus" | sort); do
+    packing_bin=$(basename $packing_out | sed "s/mlir/bin/")
+    mkdir $packing_bin
+    echoGreen "\nCOMPILE AFFINE PACKING PLUS: $(echo $packing_out | grep -o 'l[0-9]')"
+    $LOWER_BIN_PLUS_SH -D $DATASET_SIZE $FLAGS $packing_out $packing_bin
     rm -r $packing_bin/tmp
   done
   # ----------------------------------------------------------------

@@ -1,13 +1,13 @@
 # Cache sizes in KiB
 # Size per core
-L1="32"
-L2="256"
+L1="48"
+L2="2948"
 # Total size
-L3="8192"
+L3="36384"
 
 # Cache associativities
-L1_ASSOCIATIVITY="8"
-L2_ASSOCIATIVITY="8"
+L1_ASSOCIATIVITY="12"
+L2_ASSOCIATIVITY="16"
 
 # Cache line size in Bytes
 CACHE_LINE="64"
