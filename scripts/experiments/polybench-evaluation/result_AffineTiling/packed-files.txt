@@ -1,0 +1,6 @@
+affine-tiling-l1-packing-mlir/contraction-3d.mlir
+affine-tiling-l1-packing-mlir-plus/contraction-3d.mlir
+affine-tiling-l2-packing-mlir/contraction-3d.mlir
+affine-tiling-l2-packing-mlir-plus/contraction-3d.mlir
+affine-tiling-l3-packing-mlir/contraction-3d.mlir
+affine-tiling-l3-packing-mlir-plus/contraction-3d.mlir
