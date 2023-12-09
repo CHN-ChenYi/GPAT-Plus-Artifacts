@@ -41,3 +41,6 @@ spec.file
 *.mlir
 *.log
 *.mlir
+
+error.txt
+tile.sizes
