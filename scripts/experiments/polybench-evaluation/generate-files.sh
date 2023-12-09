@@ -431,12 +431,12 @@ echo $(for i in $(grep -rl "Succeeded generating packing" | sort | uniq); do
        done | sort | uniq) > $PACKED_BENCHMARKS
 
 # Delete mlir files benchmarks that are not in packed-benchmarks list
-for i in $(find -type f -name "*.mlir"); do
-  grep -q $(basename ${i%.*}) $PACKED_BENCHMARKS
-  if [ "$?" -eq "1" ]; then
-    rm $i
-  fi
-done
+# for i in $(find -type f -name "*.mlir"); do
+#   grep -q $(basename ${i%.*}) $PACKED_BENCHMARKS
+#   if [ "$?" -eq "1" ]; then
+#     rm $i
+#   fi
+# done
 
 cd $OUTPUT_DIR
 PACKED_FILES="$OUTPUT_DIR/packed-files.txt"
@@ -445,7 +445,7 @@ PACKED_FILES="$OUTPUT_DIR/packed-files.txt"
 grep -rl "Succeeded generating packing" | sort | uniq | cut -d'/' -f1,3 | sed 's/.log/.mlir/' > $PACKED_FILES
 
 if [ "$TILING_METHOD" == "Polymer" ]; then
-  # Delete mlir packing files that are not in packed-files list
+  Delete mlir packing files that are not in packed-files list
   for i in $(find -type f -path "*polymer-packing-[0-9]*-mlir/*.mlir" | sed 's/.\///'); do
     grep -q $i $PACKED_FILES
     if [ "$?" -eq "1" ]; then
@@ -454,23 +454,23 @@ if [ "$TILING_METHOD" == "Polymer" ]; then
   done
 else
   # Delete mlir plus packing files that are not in packed-files list
-  for i in $(find -type f -path "*affine-tiling-l[0-9]-packing-mlir-plus/*.mlir" | sed 's/.\///'); do
-    grep -q $i $PACKED_FILES
-    if [ "$?" -eq "1" ]; then
-      rm $i
-    fi
-  done
+  # for i in $(find -type f -path "*affine-tiling-l[0-9]-packing-mlir-plus/*.mlir" | sed 's/.\///'); do
+  #   grep -q $i $PACKED_FILES
+  #   if [ "$?" -eq "1" ]; then
+  #     rm $i
+  #   fi
+  # done
 
   # Get list of the tiling files that were not packed
   PACKED_TILING_FILES="$OUTPUT_DIR/packed-tiling-files.txt"
   cat $PACKED_FILES | sed "s/-packing//" > $PACKED_TILING_FILES
   # Delete mlir plus tiling files that were not packed
-  for i in $(find -type f -path "*affine-tiling-l[0-9]-mlir-plus/*.mlir" | sed 's/.\///'); do
-    grep -q $i $PACKED_TILING_FILES
-    if [ "$?" -eq "1" ]; then
-      rm $i
-    fi
-  done
+  # for i in $(find -type f -path "*affine-tiling-l[0-9]-mlir-plus/*.mlir" | sed 's/.\///'); do
+  #   grep -q $i $PACKED_TILING_FILES
+  #   if [ "$?" -eq "1" ]; then
+  #     rm $i
+  #   fi
+  # done
 fi
 
 FLAGS=""
