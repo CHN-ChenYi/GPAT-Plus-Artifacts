@@ -3,6 +3,8 @@ install/
 lib/
 config.file
 spec.file
+archive/
+result*/
 
 # Prerequisites
 *.d

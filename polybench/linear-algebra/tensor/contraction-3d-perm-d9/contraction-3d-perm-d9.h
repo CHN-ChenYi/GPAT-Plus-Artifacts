@@ -1,5 +1,5 @@
-#ifndef _TENSORCONTRACTION_H
-# define _TENSORCONTRACTION_H
+#ifndef _TENSORCONTRACTION_PERM_D9_H
+# define _TENSORCONTRACTION_PERM_D9_H
 
 /* Default to LARGE_DATASET. */
 # if !defined(MINI_DATASET) && !defined(SMALL_DATASET) && !defined(MEDIUM_DATASET) && !defined(LARGE_DATASET) && !defined(EXTRALARGE_DATASET)

@@ -1,5 +1,0 @@
-[0;91m  Timeout: adi.mlir[0m
-[0;91m  Timeout: deriche.mlir[0m
-[0;91m  Error: ludcmp.mlir[0m
-[0;91m  Error: nussinov.mlir[0m
-[0;91m  Error: symm.mlir[0m

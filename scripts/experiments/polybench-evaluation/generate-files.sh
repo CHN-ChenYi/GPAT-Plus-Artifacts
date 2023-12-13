@@ -241,6 +241,13 @@ if [ ! -f $POLYMER_SH ]; then
 fi
 POLYMER_SH=$(realpath $POLYMER_SH)
 
+POLYMER_PLUS_SH="$scriptPath/../../polymer-plus/polymer-plus.sh"
+if [ ! -f $POLYMER_PLUS_SH ]; then
+  echo "polymer.sh not found!"
+  exit 1
+fi
+POLYMER_PLUS_SH=$(realpath $POLYMER_PLUS_SH)
+
 MLIR_PACKING_SH="$scriptPath/../../mlir-packing/mlir-packing.sh"
 if [ ! -f $MLIR_PACKING_SH ]; then
   echo "mlir-packing.sh not found!"
@@ -331,6 +338,31 @@ if [ "$TILING_METHOD" == "Polymer" ]; then
       exit 1
     ;;
   esac
+
+  # Generate polymer-plus mlir files ------------------------------------
+  for tile in $(seq $FIRST_SIZE $INCREMENT $LAST_SIZE); do
+    echoGreen "\nPOLYMER: TILE $tile"
+    POLYMER_OUT="$OUTPUT_DIR/polymer-$tile-mlir-plus"
+    mkdir $POLYMER_OUT
+    # set tile sizes
+    echo -e "$tile\n$tile\n$tile\n$tile\n$tile\n$tile\n" > "$POLYMER_OUT/tile.sizes"
+    $POLYMER_PLUS_SH $POLYGEIST_OUT $POLYMER_OUT
+  done
+  # ----------------------------------------------------------------
+
+  # Generate packings (plus) for polymer-plus mlir files------------------------
+  for tiling_out in $(find $OUTPUT_DIR -type d -name "polymer-[0-9]*-mlir-plus" | sort); do
+    tile_size=$(basename $tiling_out | cut -d '-' -f 2)
+    echoGreen "\nPACKING: TILE $tile_size"
+    PACKING_OUT="$OUTPUT_DIR/polymer-packing-${tile_size}-mlir-plus"
+    mkdir $PACKING_OUT
+    $MLIR_PLUS_PACKING_SH --l1 $L1 --l2 $L2 --l3 $L3 \
+                     --cache-line $CACHE_LINE \
+                     --dtlb-entries $DTLB_ENTRY \
+                     --dtlb-page $DTLB_PAGE \
+                     $tiling_out $PACKING_OUT
+  done
+  # ----------------------------------------------------------------
 
   # Generate polymer mlir files ------------------------------------
   for tile in $(seq $FIRST_SIZE $INCREMENT $LAST_SIZE); do
@@ -527,6 +559,18 @@ if [ $TILING_METHOD == "Polymer" ]; then
     PACKING_BIN="$OUTPUT_DIR/polymer-packing-${tile_size}-bin"
     mkdir $PACKING_BIN
     $LOWER_BIN_SH -D $DATASET_SIZE $FLAGS $PACKING_OUT $PACKING_BIN
+    rm -r $PACKING_BIN/tmp
+  done
+  # ----------------------------------------------------------------
+
+  # Compile polymer packing executables ----------------------------
+  for POLYMER_OUT in $(find $OUTPUT_DIR -type d -name "polymer-[0-9]*-mlir-plus" | sort); do
+    tile_size=$(basename $POLYMER_OUT | cut -d '-' -f 2)
+    echoGreen "\nCOMPILE PACKING: TILE $tile_size"
+    PACKING_OUT="$OUTPUT_DIR/polymer-packing-${tile_size}-mlir-plus"
+    PACKING_BIN="$OUTPUT_DIR/polymer-packing-${tile_size}-bin-plus"
+    mkdir $PACKING_BIN
+    $LOWER_BIN_PLUS_SH -D $DATASET_SIZE $FLAGS $PACKING_OUT $PACKING_BIN
     rm -r $PACKING_BIN/tmp
   done
   # ----------------------------------------------------------------

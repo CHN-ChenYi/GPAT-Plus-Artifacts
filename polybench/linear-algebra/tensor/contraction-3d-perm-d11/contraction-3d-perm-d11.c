@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
-#include "contraction-3d.h"
+#include "contraction-3d-perm-d11.h"
 #include <polybench.h>
 
 
@@ -56,7 +56,7 @@ void print_array(int a_d_3, int b_d_3,
 /* Main computational kernel. The whole function will be timed,
    including the call and return. */
 static
-void kernel_contraction_3d(int a_d_1, int a_d_2, int a_d_3,
+void kernel_contraction_3d_perm_d11(int a_d_1, int a_d_2, int a_d_3,
                               int b_d_1, int b_d_2, int b_d_3,
                               DATA_TYPE POLYBENCH_2D(C, A_D_3, B_D_3, a_d_3, b_d_3),
                               DATA_TYPE POLYBENCH_3D(A, A_D_1, A_D_2, A_D_3, a_d_1, a_d_2, a_d_3),
@@ -70,9 +70,9 @@ void kernel_contraction_3d(int a_d_1, int a_d_2, int a_d_3,
     }
     for (int i = 0; i < _PB_A_D_3; i++) {
         for (int k = 0; k < _PB_B_D_3; k++) {
-            for (int m = 0; m < _PB_A_D_1 / 7; m++) {
+            for (int m = 0; m < _PB_A_D_1 / 11; m++) {
                 for (int n = 0; n < _PB_A_D_2; n++) {
-                    C[i][k] += A[7*m][n][i] * B[n][m][k];
+                    C[i][k] += A[11 * m][n][i] * B[n][11 * m][k];
                 }
             }
         }
@@ -113,7 +113,7 @@ int main(int argc, char** argv)
   polybench_start_instruments;
 
   /* Run kernel. */
-  kernel_contraction_3d(a_d_1, a_d_2, a_d_3,
+  kernel_contraction_3d_perm_d11(a_d_1, a_d_2, a_d_3,
                            b_d_1, b_d_2, b_d_3,
                            POLYBENCH_ARRAY(C),
                            POLYBENCH_ARRAY(A),

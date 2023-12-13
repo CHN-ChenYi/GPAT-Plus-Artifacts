@@ -152,6 +152,8 @@ if __name__ == "__main__":
         affine_tiling_conf_list = {}
         affine_tiling_packing_mean_list = {}
         affine_tiling_packing_conf_list = {}
+        affine_tiling_packing_plus_mean_list = {}
+        affine_tiling_packing_plus_conf_list = {}
         for level in ('l1', 'l2', 'l3'):
             affine_tiling_mean, affine_tiling_conf, _ = parse_log_file(input_dir / "affine-tiling-{}.log".format(level))
             affine_tiling_mean_list[level] = affine_tiling_mean
@@ -160,6 +162,10 @@ if __name__ == "__main__":
             affine_tiling_packing_mean, affine_tiling_packing_conf, _ = parse_log_file(input_dir / "affine-tiling-{}-packing.log".format(level))
             affine_tiling_packing_mean_list[level] = affine_tiling_packing_mean
             affine_tiling_packing_conf_list[level] = affine_tiling_packing_conf
+            
+            affine_tiling_packing_plus_mean, affine_tiling_packing_plus_conf, _ = parse_log_file(input_dir / "affine-tiling-{}-packing-bin-plus.log".format(level))
+            affine_tiling_packing_plus_mean_list[level] = affine_tiling_packing_plus_mean
+            affine_tiling_packing_plus_conf_list[level] = affine_tiling_packing_plus_conf
 
         # Build bar graph for execution time ------------------------------------------------------
         for benchmark in polly_mean.keys():
@@ -169,8 +175,14 @@ if __name__ == "__main__":
             y_time_affine_tiling_packing = []
             y_conf_affine_tiling_packing = []
             x_cache_level_packings = []
+            y_time_affine_tiling_packing_plus = []
+            y_conf_affine_tiling_packing_plus = []
+            x_cache_level_packings_plus = []
             for level in sorted(affine_tiling_packing_mean_list.keys()):
                 if benchmark in affine_tiling_packing_mean_list[level]:
+                    y_time_affine_tiling_packing_plus.append(affine_tiling_packing_plus_mean_list[level][benchmark])
+                    y_conf_affine_tiling_packing_plus.append(affine_tiling_packing_plus_conf_list[level][benchmark])
+                    x_cache_level_packings_plus.append(level)
                     y_time_affine_tiling_packing.append(affine_tiling_packing_mean_list[level][benchmark])
                     y_conf_affine_tiling_packing.append(affine_tiling_packing_conf_list[level][benchmark])
                     x_cache_level_packings.append(level)
@@ -183,18 +195,20 @@ if __name__ == "__main__":
             width = 0.2  # the width of the bars
 
             fig, ax = plt.subplots()
-            rects1 = ax.bar(x - width/2, y_time_affine_tiling, width, yerr=y_conf_affine_tiling, color='#b2abd2', edgecolor='black', linewidth=0.5, alpha=0.8, label='Affine')
-            rects2 = ax.bar(x + width/2, y_time_affine_tiling_packing, width, yerr=y_conf_affine_tiling_packing, color='#e66101', edgecolor='black', linewidth=0.25, alpha=0.8, label='Affine + GPAT')
+            rects1 = ax.bar(x - width, y_time_affine_tiling, width, yerr=y_conf_affine_tiling, color='#b2abd2', edgecolor='black', linewidth=0.5, alpha=0.8, label='Affine')
+            rects2 = ax.bar(x , y_time_affine_tiling_packing, width, yerr=y_conf_affine_tiling_packing, color='#e66101', edgecolor='black', linewidth=0.25, alpha=0.8, label='Affine + GPAT')
+            rects3 = ax.bar(x + width, y_time_affine_tiling_packing_plus, width, yerr=y_conf_affine_tiling_packing, color='#99dc5a', edgecolor='black', linewidth=0.25, alpha=0.8, label='Affine + GPAT + Permutation')
 
-            plt.axhline(y=polly_mean[benchmark], color='black', linestyle='-', alpha=0.8, linewidth=1, label='Polly')
-            ax.fill_between([-0.5, 2.5], polly_mean[benchmark]+polly_conf[benchmark], polly_mean[benchmark]-polly_conf[benchmark], alpha=0.3, color='#000000')
-            plt.axhline(y=polygeist_mean[benchmark], color='black', linestyle='--', alpha=0.8, linewidth=1, label='Clang-O3')
-            ax.fill_between([-0.5, 2.5], polygeist_mean[benchmark]+polygeist_conf[benchmark], polygeist_mean[benchmark]-polygeist_conf[benchmark], alpha=0.3, color='#000000')
+            # plt.axhline(y=polly_mean[benchmark], color='black', linestyle='-', alpha=0.8, linewidth=1, label='Polly')
+            # ax.fill_between([-0.5, 2.5], polly_mean[benchmark]+polly_conf[benchmark], polly_mean[benchmark]-polly_conf[benchmark], alpha=0.3, color='#000000')
+            # plt.axhline(y=polygeist_mean[benchmark], color='black', linestyle='--', alpha=0.8, linewidth=1, label='Clang-O3')
+            # ax.fill_between([-0.5, 2.5], polygeist_mean[benchmark]+polygeist_conf[benchmark], polygeist_mean[benchmark]-polygeist_conf[benchmark], alpha=0.3, color='#000000')
 
             # Set axes labels and limits
             ax.set_ylim(bottom=0)
             ax.set_xlim(left=-0.5, right=2.5)
-            ax.set_xticks(x, [l.upper() for l in x_cache_level])
+            ax.set_xticks(x)
+            ax.set_xticklabels([l.upper() for l in x_cache_level])
             ax.xaxis.grid(True)
             ax.grid(which='both', alpha=0.3)
             ax.set_ylabel('CPU Time (ms)')
@@ -208,7 +222,31 @@ if __name__ == "__main__":
             plt.savefig(graph_path, bbox_inches='tight', dpi=300)
             plt.close(fig)
         # -----------------------------------------------------------------------------------------
-
+        
+        # calculate advantage percentage
+        plus_vs_gpat_all = {}
+        plus_vs_affine_all = {}
+        for benchmark in polly_mean.keys():
+            plus_vs_gpat = []
+            plus_vs_affine = []
+            for level in {'l1', 'l2', 'l3'}:
+                if benchmark in affine_tiling_packing_mean_list[level]:
+                    plus_vs_gpat.append(abs(affine_tiling_packing_plus_mean_list[level][benchmark] - affine_tiling_packing_mean_list[level][benchmark]) / affine_tiling_packing_mean_list[level][benchmark])
+                    plus_vs_affine.append(abs(affine_tiling_packing_plus_mean_list[level][benchmark] - affine_tiling_mean_list[level][benchmark]) / affine_tiling_mean_list[level][benchmark])
+            plus_vs_gpat_all[benchmark] = plus_vs_gpat
+            plus_vs_affine_all[benchmark] = plus_vs_affine
+            
+        for benchmark in polly_mean.keys():
+            print("Advantage of GPAT+Permutation over GPAT for {}: {:.2f}%".format(benchmark, np.mean(plus_vs_gpat_all[benchmark])*100))
+            print("Advantage of GPAT+Permutation over Affine for {}: {:.2f}%".format(benchmark, np.mean(plus_vs_affine_all[benchmark])*100))
+        
+        # average over all benchmarks and levels
+        plus_vs_gpat_avg = np.mean([np.mean(plus_vs_gpat_all[benchmark]) for benchmark in polly_mean.keys()])
+        plus_vs_affine_avg = np.mean([np.mean(plus_vs_affine_all[benchmark]) for benchmark in polly_mean.keys()])
+        
+        print("Average advantage of GPAT+Permutation over GPAT: {:.2f}%".format(plus_vs_gpat_avg*100))
+        print("Average advantage of GPAT+Permutation over Affine: {:.2f}%".format(plus_vs_affine_avg*100))
+        
         # Build bar graph for speedup -------------------------------------------------------------
         for benchmark in polly_mean.keys():
             y_time_affine_tiling = []
@@ -217,8 +255,14 @@ if __name__ == "__main__":
             y_time_affine_tiling_packing = []
             y_conf_affine_tiling_packing = []
             x_cache_level_packings = []
+            y_time_affine_tiling_packing_plus = []
+            y_conf_affine_tiling_packing_plus = []
+            x_cache_level_packings_plus = []
             for level in sorted(affine_tiling_packing_mean_list.keys()):
                 if benchmark in affine_tiling_packing_mean_list[level]:
+                    y_time_affine_tiling_packing_plus.append(polygeist_mean[benchmark]/affine_tiling_packing_plus_mean_list[level][benchmark])
+                    # y_conf_affine_tiling_packing_plus.append(affine_tiling_packing_plus_conf_list[level][benchmark])
+                    x_cache_level_packings_plus.append(level)
                     y_time_affine_tiling_packing.append(polygeist_mean[benchmark]/affine_tiling_packing_mean_list[level][benchmark])
                     # y_conf_affine_tiling_packing.append(affine_tiling_packing_conf_list[level][benchmark])
                     x_cache_level_packings.append(level)
@@ -231,16 +275,18 @@ if __name__ == "__main__":
             width = 0.2  # the width of the bars
 
             fig, ax = plt.subplots()
-            rects1 = ax.bar(x - width/2, y_time_affine_tiling, width, color='#b2abd2', edgecolor='black', linewidth=0.5, alpha=0.8, label='Affine')
-            rects2 = ax.bar(x + width/2, y_time_affine_tiling_packing, width, color='#e66101', edgecolor='black', linewidth=0.25, alpha=0.8, label='Affine + GPAT')
+            rects1 = ax.bar(x - width, y_time_affine_tiling, width, color='#b2abd2', edgecolor='black', linewidth=0.5, alpha=0.8, label='Affine')
+            rects2 = ax.bar(x, y_time_affine_tiling_packing, width, color='#e66101', edgecolor='black', linewidth=0.25, alpha=0.8, label='Affine + GPAT')
+            rects3 = ax.bar(x + width, y_time_affine_tiling_packing_plus, width, color='#99dc5a', edgecolor='black', linewidth=0.25, alpha=0.8, label='Affine + GPAT + Permutation')
 
-            plt.axhline(y=polygeist_mean[benchmark]/polly_mean[benchmark], color='black', linestyle='-', alpha=0.8, linewidth=1, label='Polly')
-            ax.axhline(y=1, color='black', linestyle='--', alpha=0.5, linewidth=1)
+            # plt.axhline(y=polygeist_mean[benchmark]/polly_mean[benchmark], color='black', linestyle='-', alpha=0.8, linewidth=1, label='Polly')
+            # ax.axhline(y=1, color='black', linestyle='--', alpha=0.5, linewidth=1)
 
             # Set axes labels and limits
             ax.set_ylim(bottom=0)
             ax.set_xlim(left=-0.5, right=2.5)
-            ax.set_xticks(x, [l.upper() for l in x_cache_level])
+            ax.set_xticks(x)
+            ax.set_xticklabels([l.upper() for l in x_cache_level])
             ax.xaxis.grid(True)
             ax.grid(which='both', alpha=0.3)
             ax.set_ylabel('Speedup over Clang-O3')
@@ -266,7 +312,7 @@ if __name__ == "__main__":
         y_times = []
         # y_confs = []
 
-        for benchmark in ["2mm", "3mm", "doitgen", "contraction-3d", "gramschmidt", "trmm"]:
+        for benchmark in ["contraction-3d", "contraction-3d-perm-d3", "contraction-3d-perm-d5", "contraction-3d-perm-d7", "contraction-3d-perm-d9", "contraction-3d-perm-d11"]:
             for level in sorted(affine_tiling_packing_mean_list.keys()):
                 if benchmark in affine_tiling_packing_mean_list[level]:
                     y_times.append(polygeist_mean[benchmark]/affine_tiling_mean_list[level][benchmark])
@@ -288,15 +334,15 @@ if __name__ == "__main__":
             width = 2
 
             # set positions for all bars
-            if benchmark in ["2mm", "3mm"]:
+            if benchmark in ["contraction-3d", "contraction-3d-perm-d3"]:
                 x_positions += [base_x, base_x+width, base_x+1+2*width, base_x+1+3*width, base_x+2+4*width]
-            elif benchmark == "doitgen":
+            elif benchmark == "contraction-3d-perm-d5":
                 x_positions += [base_x, base_x+width, base_x+1+2*width, base_x+1+3*width, base_x+2+4*width, base_x+2+5*width, base_x+3+6*width]
-            elif benchmark in ["gramschmidt", "trmm", "contraction-3d"]:
+            elif benchmark in ["contraction-3d-perm-d7", "contraction-3d-perm-d9", "contraction-3d-perm-d11"]:
                 x_positions += [base_x, base_x+width, base_x+1+2*width] 
 
             # set positions for all bars
-            if benchmark in ["2mm", "3mm"]:
+            if benchmark in ["contraction-3d", "contraction-3d-perm-d3"]:
                 x_ticks += ["L1", "L2"]
                 x_ticks_positions += [(base_x+base_x+width)/2, (base_x+1+2*width+base_x+1+3*width)/2]
             elif benchmark == "doitgen":
@@ -349,12 +395,12 @@ if __name__ == "__main__":
         # ax.text((x_positions[20]+x_positions[22]+3*width)/2, -0.5, "{\\em \\rmfamily gramschmidt}", rotation=45, va="top", ha="right")
         # ax.text((x_positions[23]+x_positions[25]+3*width)/2, -0.5, "{\\em \\rmfamily trmm}", rotation=45, va="top", ha="right")
 
-        ax.text((x_positions[0]+x_positions[4]+3*width)/2, -0.5, "2mm", rotation=45, va="top", ha="right")
-        ax.text((x_positions[5]+x_positions[9]+3*width)/2, -0.5, "3mm", rotation=45, va="top", ha="right")
-        ax.text((x_positions[10]+x_positions[16]+3*width)/2, -0.5, "doitgen", rotation=45, va="top", ha="right")
-        ax.text((x_positions[17]+x_positions[19]+3*width)/2, -0.5, "contract3D", rotation=45, va="top", ha="right")
-        ax.text((x_positions[20]+x_positions[22]+3*width)/2, -0.5, "gramschmidt", rotation=45, va="top", ha="right")
-        ax.text((x_positions[23]+x_positions[25]+3*width)/2, -0.5, "trmm", rotation=45, va="top", ha="right")
+        ax.text((x_positions[0]+x_positions[4]+3*width)/2, -0.5, "contract3D", rotation=45, va="top", ha="right")
+        ax.text((x_positions[5]+x_positions[9]+3*width)/2, -0.5, "contract3D-perm-3", rotation=45, va="top", ha="right")
+        ax.text((x_positions[10]+x_positions[16]+3*width)/2, -0.5, "contract3D-perm-5", rotation=45, va="top", ha="right")
+        ax.text((x_positions[17]+x_positions[19]+3*width)/2, -0.5, "contract3D-perm-7", rotation=45, va="top", ha="right")
+        ax.text((x_positions[20]+x_positions[22]+3*width)/2, -0.5, "contract3D-perm-9", rotation=45, va="top", ha="right")
+        ax.text((x_positions[23]+x_positions[25]+3*width)/2, -0.5, "contract3D-perm-11", rotation=45, va="top", ha="right")
         
         plt.savefig(graph_path, bbox_inches='tight', dpi=300)
         plt.close(fig)

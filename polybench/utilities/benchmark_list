@@ -1,7 +1,5 @@
 ./datamining/correlation/correlation.c
 ./datamining/covariance/covariance.c
-./linear-algebra/kernels/2mm/2mm.c
-./linear-algebra/kernels/3mm/3mm.c
 ./linear-algebra/kernels/atax/atax.c
 ./linear-algebra/kernels/bicg/bicg.c
 ./linear-algebra/kernels/doitgen/doitgen.c
@@ -12,7 +10,6 @@
 ./linear-algebra/blas/symm/symm.c
 ./linear-algebra/blas/syr2k/syr2k.c
 ./linear-algebra/blas/syrk/syrk.c
-./linear-algebra/blas/trmm/trmm.c
 ./linear-algebra/solvers/cholesky/cholesky.c
 ./linear-algebra/solvers/durbin/durbin.c
 ./linear-algebra/solvers/gramschmidt/gramschmidt.c

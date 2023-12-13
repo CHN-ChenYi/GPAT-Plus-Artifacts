@@ -66,6 +66,7 @@ void print_array(int m, int n,
 
 /* Main computational kernel. The whole function will be timed,
    including the call and return. */
+static
 void kernel_trmm(int m, int n,
 		 DATA_TYPE alpha,
 		 DATA_TYPE POLYBENCH_2D(A,M,M,m,m),
