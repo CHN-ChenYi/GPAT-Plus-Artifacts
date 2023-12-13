@@ -1,1 +1,0 @@
-contraction-3d contraction-3d-perm-d11 contraction-3d-perm-d3 contraction-3d-perm-d5 contraction-3d-perm-d7 contraction-3d-perm-d9 doitgen gramschmidt
