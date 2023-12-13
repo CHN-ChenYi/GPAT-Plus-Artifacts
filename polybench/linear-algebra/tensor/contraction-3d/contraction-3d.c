@@ -70,9 +70,9 @@ void kernel_contraction_3d(int a_d_1, int a_d_2, int a_d_3,
     }
     for (int i = 0; i < _PB_A_D_3; i++) {
         for (int k = 0; k < _PB_B_D_3; k++) {
-            for (int m = 0; m < _PB_A_D_1 / 7; m++) {
+            for (int m = 0; m < _PB_A_D_1; m++) {
                 for (int n = 0; n < _PB_A_D_2; n++) {
-                    C[i][k] += A[7*m][n][i] * B[n][m][k];
+                    C[i][k] += A[m][n][i] * B[n][m][k];
                 }
             }
         }

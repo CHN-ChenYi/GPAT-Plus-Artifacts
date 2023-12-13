@@ -37,9 +37,9 @@
 
 #  ifdef LARGE_DATASET
 #   define A_D_1 80
-#   define A_D_2 10001
+#   define A_D_2 100
 #   define A_D_3 50
-#   define B_D_1 10001
+#   define B_D_1 100
 #   define B_D_2 80
 #   define B_D_3 60
 #  endif
